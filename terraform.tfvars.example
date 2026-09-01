@@ -1,0 +1,92 @@
+# ==============================================================================
+#  azure-private-dns — terraform.tfvars
+# ==============================================================================
+#  Copy this file to `terraform.tfvars`, set the values, then run:
+#      tofu init && tofu apply        (or:  terraform init && terraform apply)
+#
+# AUTHENTICATION — Azure:
+#   The azurerm provider authenticates to Microsoft Entra ID (Azure AD) and
+#   resolves credentials in this order: explicit OIDC, then client certificate,
+#   then client secret, then Managed Identity, then Azure CLI.
+#   Quick start: az login (then `az account set --subscription <id>`).
+#   Environment variables Terraform reads:
+#     ARM_SUBSCRIPTION_ID — Target subscription GUID; required for plan/apply in provider v4.x.
+#     ARM_TENANT_ID — Entra ID (Azure AD) tenant GUID.
+#     ARM_CLIENT_ID — App registration / service principal client id.
+#     ARM_CLIENT_SECRET  (secret) — Service principal client secret (secret-based auth).
+#   Full guide (auth + remote state):  docs/CONNECTING-PROVIDERS.md#azure
+#
+#  Secrets below read "REPLACE_ME" — never commit real secrets. Prefer
+#  TF_VAR_<name> environment variables or a secrets manager.
+#  Status: static-validated, live-test pending (see README.md).
+# ==============================================================================
+
+
+# ------------------------------------------------------------------------------
+#  REQUIRED — you must set these
+# ------------------------------------------------------------------------------
+
+# location  —  string  (REQUIRED)
+#   Azure region for the resource group and self-created virtual network.
+location  = "eastus"
+
+# zone_name  —  string  (REQUIRED)
+#   Fully-qualified, multi-label private DNS zone name. Use a custom internal
+#   domain (e.g. "corp.internal") or an Azure Private Link zone
+#   (e.g. "privatelink.blob.core.windows.net").
+zone_name = "corp.internal"
+
+# ------------------------------------------------------------------------------
+#  OPTIONAL — defaults shown; uncomment a line to override
+# ------------------------------------------------------------------------------
+
+# name  —  string  (optional, default: "privatedns")
+#   Base name; prefixes the resource group, virtual network and VNet link.
+#   Constraint: 2-40 chars, lowercase letters/digits/hyphens, start+end alnum.
+# name = "privatedns"
+
+# resource_group_name  —  string  (optional, default: null => "rg-<name>")
+#   Resource group to create (and destroy). This module is self-contained.
+# resource_group_name = null
+
+# create_virtual_network  —  bool  (optional, default: true)
+#   Create + link a VNet. Set false to manage only the zone and link existing
+#   VNets via virtual_network_links.
+# create_virtual_network = true
+
+# vnet_address_space  —  list  (optional, default: ["10.30.0.0/16"])
+#   Address space for the self-created VNet (used only when create_virtual_network).
+# vnet_address_space = ["10.30.0.0/16"]
+
+# registration_enabled  —  bool  (optional, default: false)
+#   Auto-register VM DNS records for the self-created VNet link. At most one
+#   linked VNet per zone may have this enabled.
+# registration_enabled = false
+
+# virtual_network_links  —  map(object)  (optional, default: {})
+#   Links to EXISTING virtual networks, keyed by a short link name.
+# virtual_network_links = {
+#   hub = {
+#     virtual_network_id   = "/subscriptions/0000.../virtualNetworks/vnet-hub"
+#     registration_enabled = false
+#   }
+# }
+
+# a_records  —  map(object)  (optional, default: {})
+#   A records keyed by record name ("@" for the apex).
+# a_records = {
+#   app = { ttl = 300, records = ["10.30.1.10"] }
+# }
+
+# cname_records  —  map(object)  (optional, default: {})
+#   CNAME records keyed by record name.
+# cname_records = {
+#   www = { ttl = 300, record = "app.corp.internal" }
+# }
+
+# tags  —  map  (optional, default: {})
+#   Tags applied to all resources.
+tags = {
+  environment = "example"
+  managed_by  = "iac-bazaar"
+}
